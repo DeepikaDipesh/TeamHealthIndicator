@@ -1,0 +1,272 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    <script type="text/javascript" src="//code.jquery.com/jquery-2.1.4.js"></script>
+    <script type="text/javascript" src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link rel="stylesheet" type="text/css" href="//code.jquery.com/ui/1.11.4/themes/ui-lightness/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="resultlight.css">
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="data.js"></script>
+    <script type='text/javascript'>//<![CDATA[
+    window.onload=function(){
+
+
+            $( function(){
+
+                $('.dragAble').draggable({
+                    "containment" : "#content",
+                    "cursor" : "move",
+                    "stack" : ".dragAble"
+                });
+
+                var droppeddata = [];
+                $( ".dropAble" ).droppable({
+                    "accept" : ".dragAble",
+                    "hoverClass" : "highlight",
+
+                    "drop" : function( event, ui ){
+
+                        droppeddata.push($( ui.draggable ).data( "r" ))
+                        $( this ).data( "r", $( ui.draggable ).data( "r" ) );
+                    },
+                });
+
+
+                $( "#bouton" ).on( "click", function( event ){
+                    var
+                        droppableCorrectAnswers = [ "1-a","1-e","1-g","2-b","2-d", "3-c","3-f" ],
+
+                        droppableBoolResult = [],
+
+                        droppableResults = [],
+
+                        point = 0;
+
+                    var jObjDropAble = $(".dropAble");
+
+
+                    jObjDropAble.removeClass( "true false" );
+
+                    jObjDropAble.each( function(){
+                        droppableResults.push( $( this ).data( "r" ) );
+                    });
+
+
+                   //
+                    // alert(droppableResults);//TEST///////////////////////////
+
+
+                    $.each( droppableResults, function( index, value ){
+                        if ( $.inArray( value, droppableCorrectAnswers ) == -1 ){
+                            droppableBoolResult.push( false );
+                        } else {
+                            droppableBoolResult.push( true );
+                            ++point;
+                        }
+                    });
+
+                    $.each( droppableBoolResult, function( i, item ){
+                        if ( item ){
+                            jObjDropAble.eq( i ).addClass( "true" );
+                        } else {
+                            jObjDropAble.eq( i ).addClass( "false" );
+                        }
+                    });
+
+                    console.log(droppeddata);
+                    updateGraph(droppeddata);
+                });
+
+            });
+        }//]]>
+
+</script>
+</head>
+
+<body>
+<script>
+
+var diventer = d3.select("body").selectAll("div")
+    .data(students)
+    .enter()
+    .append("div")
+    .attr("id", function(d) { return d.label; })
+    .attr("data-r",function (d) {return JSON.stringify(d);});
+
+diventer.append("p")
+    .text(function(d) { return d.label; });
+
+diventer.classed("dragAble",true);
+
+
+
+</script>
+<p><button id="bouton">Check</button></p>
+
+
+
+<h2>Group</h2>
+
+
+
+<div id="content">
+
+    <div class="dropAble" data-q="1" data-r="0">
+        <p>Drag students to form groups and see its strength </p>
+    </div>
+
+
+
+</div>
+<div id="graphic"></div>
+<br>
+
+<script>
+    // tell the embed parent frame the height of the content
+    if (window.parent && window.parent.parent){
+        window.parent.parent.postMessage(["resultsFrame", {
+            height: document.body.getBoundingClientRect().height,
+            slug: "vbyyvt2o"
+        }], "*")
+    }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/1.7.0/d3-legend.min.js"></script>
+<script>
+    function updateGraph (updatedData) {
+
+        dataset = [
+            {
+                "IVIS": 7,
+                "Stats": 3,
+                "Math": 3,
+                "Art": 9,
+                "User": 6,
+                "Prog": 2,
+                "Graphics": 1,
+                "HCI": 4,
+                "UX": 8
+            }];
+        dataset=updatedData;
+
+        var jsondata;
+        jsondata = dataset;
+
+//Map each skill and total for that
+        var skillValuesOfAllStudents ={};
+        for(var i = 0; i < jsondata.length; i++) {
+
+            var presentStudent = jsondata[i];
+            for (var key in presentStudent) {
+                //Add the individial skill set values
+                if (key in skillValuesOfAllStudents){
+                    //If skill is already seen in another student in this group, then add it to that same skill
+                    skillValuesOfAllStudents[key]=skillValuesOfAllStudents[key]+parseInt(presentStudent[key]);
+                } else
+                {
+                    //Skill is seen for first time in the group
+                    //Add it to skill value of all students
+                    skillValuesOfAllStudents[key]=parseInt(presentStudent[key]);
+                }
+
+                // do some more stuff with obj[key]
+            }
+
+        }
+
+
+        var Skills = new Array();
+        var SkillValues = new Array();
+
+        for (var key in skillValuesOfAllStudents) {
+            if (key !== "label") {
+                var obj = new Object();
+                obj.name = key;
+                obj.value = skillValuesOfAllStudents[key];
+                Skills.push(obj);
+            }
+        }
+        console.log(Skills);
+
+
+
+
+var data = Skills;
+        //set up svg using margin conventions - we'll need plenty of room on the left for labels
+        var margin = {
+            top: 15,
+            right: 25,
+            bottom: 15,
+            left: 60
+        };
+
+        var width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        var svg = d3.select("#graphic").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var x = d3.scale.linear()
+            .range([0, width])
+            .domain([0, d3.max(data, function (d) {
+                return d.value;
+            })]);
+
+        var y = d3.scale.ordinal()
+            .rangeRoundBands([height, 0], .1)
+            .domain(data.map(function (d) {
+                return d.name;
+            }));
+
+        //make y axis to show bar names
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            //no tick marks
+            .tickSize(0)
+            .orient("left");
+
+        var gy = svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis)
+
+        var bars = svg.selectAll(".bar")
+            .data(data)
+            .enter()
+            .append("g")
+
+        //append rects
+        bars.append("rect")
+            .attr("class", "bar")
+            .attr("y", function (d) {
+                return y(d.name);
+            })
+            .attr("height", y.rangeBand())
+            .attr("x", 0)
+            .attr("width", function (d) {
+                return x(d.value);
+            });
+
+        //add a value label to the right of each bar
+        bars.append("text")
+            .attr("class", "label")
+            //y position of the label is halfway down the bar
+            .attr("y", function (d) {
+                return y(d.name) + y.rangeBand() / 2 + 4;
+            })
+            //x position is 3 pixels to the right of the bar
+            .attr("x", function (d) {
+                return x(d.value) + 3;
+            })
+            .text(function (d) {
+                return d.value;
+            });
+    }
+
+</script>
+</body>
+
+</html>
